@@ -41,7 +41,7 @@ A high-performance Node.js & Express REST API powered by MySQL (`mysql2/promise`
 
 ## 🔑 Default Credentials
 
-- **Admin Email**: `admin@viyodha.com`
+- **Admin Email**: `viyodhatradingpvtlimited@gmail.com`
 - **Admin Password**: `admin123`
 
 ---
@@ -63,7 +63,7 @@ DB_PASSWORD=Rameesa@1991
 DB_NAME=viyodha_db
 DB_PORT=3306
 JWT_SECRET=viyodha_super_secret_jwt_key_2026
-ADMIN_EMAIL=admin@viyodha.com
+ADMIN_EMAIL=viyodhatradingpvtlimited@gmail.com
 ADMIN_PASSWORD=admin123
 ```
 

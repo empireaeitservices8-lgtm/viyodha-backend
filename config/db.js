@@ -116,7 +116,13 @@ async function initDB() {
         `);
 
         // Seed default admin if not exists
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@viyodha.com';
+        const adminEmail = process.env.ADMIN_EMAIL || 'viyodhatradingpvtlimited@gmail.com';
+
+        // Clean up legacy default admin email if present
+        if (adminEmail !== 'admin@viyodha.com') {
+            await connection.query(`DELETE FROM users WHERE email = 'admin@viyodha.com'`);
+        }
+
         const [adminRows] = await connection.query(`SELECT * FROM users WHERE email = ? LIMIT 1`, [adminEmail]);
         if (adminRows.length === 0) {
             const adminPass = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'admin123', 10);

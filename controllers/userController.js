@@ -289,6 +289,7 @@ exports.getAllUsersController = async (req, res) => {
 exports.deleteUserController = async (req, res) => {
     try {
         const { id } = req.params;
+        const callerEmail = req.payload;
 
         const [rows] = await pool.query("SELECT * FROM users WHERE id = ? LIMIT 1", [id]);
         if (rows.length === 0) {
@@ -298,11 +299,13 @@ exports.deleteUserController = async (req, res) => {
             });
         }
 
-        const user = rows[0];
-        if (user.role === "admin") {
-            return res.status(403).json({
+        const targetUser = rows[0];
+
+        // Do not allow deleting own active session account
+        if (targetUser.email === callerEmail) {
+            return res.status(400).json({
                 success: false,
-                message: "Admin accounts cannot be deleted.",
+                message: "You cannot delete your own logged-in admin account.",
             });
         }
 
@@ -310,7 +313,7 @@ exports.deleteUserController = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            message: "User account deleted successfully.",
+            message: `User account "${targetUser.email}" deleted successfully.`,
         });
     } catch (error) {
         console.error("Delete user error:", error);

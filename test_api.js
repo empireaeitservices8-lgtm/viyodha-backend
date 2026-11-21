@@ -58,8 +58,8 @@ async function runTests() {
 
         // 4. Admin login
         const adminLogin = await request('POST', '/login', {
-            email: 'admin@viyodha.com',
-            password: 'admin123'
+            email: process.env.ADMIN_EMAIL || 'viyodhatradingpvtlimited@gmail.com',
+            password: process.env.ADMIN_PASSWORD || 'admin123'
         });
         console.log("4. Admin login status:", adminLogin.status, "role:", adminLogin.data?.user?.role);
         const adminToken = adminLogin.data?.token;
