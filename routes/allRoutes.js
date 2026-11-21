@@ -43,6 +43,8 @@ router.delete('/admin/users/:id', adminMiddleware, userController.deleteUserCont
 // Order management
 router.get('/admin/orders', adminMiddleware, orderController.getAllOrdersController);
 router.put('/order/status/:id', adminMiddleware, orderController.updateOrderStatusController);
+router.delete('/admin/orders/:id', adminMiddleware, orderController.deleteOrderController);
+router.delete('/order/:id', adminMiddleware, orderController.deleteOrderController);
 
 // Review moderation
 router.delete('/admin/review/:id', adminMiddleware, reviewController.deleteReviewController);
