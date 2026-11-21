@@ -264,11 +264,11 @@ exports.updateMyProfileController = async (req, res) => {
     }
 };
 
-// Admin: Get all users
+// Admin: Get all customer users (excludes admin accounts)
 exports.getAllUsersController = async (req, res) => {
     try {
         const [users] = await pool.query(
-            "SELECT id, username, email, phone, role, created_at, updated_at FROM users ORDER BY id DESC"
+            "SELECT id, username, email, phone, role, created_at, updated_at FROM users WHERE role != 'admin' ORDER BY id DESC"
         );
 
         return res.status(200).json({
