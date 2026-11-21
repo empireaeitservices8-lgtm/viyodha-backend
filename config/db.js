@@ -234,7 +234,7 @@ async function initDB() {
             {
                 slug: "star-anise",
                 name: "Star Anise 200g",
-                image: "/products/star_anise.png",
+                image: "/products/star_anise.jpeg",
                 price: 299.00,
                 mrp: 349.00,
                 category: "Whole Spices",

@@ -94,5 +94,5 @@ app.use((err, req, res, next) => {
 const PORT = parseInt(process.env.PORT, 10) || 5000;
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🌿 Viyodha backend started on port ${PORT}... Ready for client requests!`);
+    console.log(`Viyodha backend started on port ${PORT}... Ready for client requests!`);
 });
