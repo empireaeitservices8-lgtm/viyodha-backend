@@ -31,17 +31,17 @@ exports.addToCartController = async (req, res) => {
 
         const product = products[0];
 
-        // Check if already in user's cart
+        // Check if already in user's cart with same pack size
         const [existing] = await pool.query(
-            "SELECT * FROM carts WHERE user_email = ? AND product_id = ? LIMIT 1",
-            [userEmail, product.id]
+            "SELECT * FROM carts WHERE user_email = ? AND product_id = ? AND pack = ? LIMIT 1",
+            [userEmail, product.id, packSize]
         );
 
         if (existing.length > 0) {
             const newQty = existing[0].quantity + qty;
             await pool.query(
-                "UPDATE carts SET quantity = ?, pack = ? WHERE id = ?",
-                [newQty, packSize, existing[0].id]
+                "UPDATE carts SET quantity = ? WHERE id = ?",
+                [newQty, existing[0].id]
             );
 
             const [updated] = await pool.query("SELECT * FROM carts WHERE id = ?", [existing[0].id]);
@@ -81,7 +81,7 @@ exports.getCartController = async (req, res) => {
 
         const [items] = await pool.query(
             `SELECT c.id as cart_id, c.quantity, c.pack, c.created_at,
-                    p.id as product_id, p.name, p.slug, p.price, p.mrp, p.image, p.category, p.brand, p.type
+                    p.id as product_id, p.name, p.slug, p.price, p.price100g, p.price200g, p.image, p.category, p.brand, p.type
              FROM carts c
              JOIN products p ON c.product_id = p.id
              WHERE c.user_email = ?
@@ -89,7 +89,20 @@ exports.getCartController = async (req, res) => {
             [userEmail]
         );
 
-        return res.status(200).json(items);
+        const formatted = items.map((it) => {
+            const p100 = it.price100g ? Number(it.price100g) : Number(it.price);
+            const p200 = it.price200g ? Number(it.price200g) : Math.round(p100 * 1.9);
+            const effectivePrice = it.pack === "200g" ? p200 : p100;
+            return {
+                ...it,
+                price: effectivePrice,
+                price100g: p100,
+                price200g: p200,
+                mrp: null,
+            };
+        });
+
+        return res.status(200).json(formatted);
     } catch (error) {
         console.error("Get cart error:", error);
         return res.status(500).json({

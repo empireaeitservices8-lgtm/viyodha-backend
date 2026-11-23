@@ -50,7 +50,9 @@ async function initDB() {
                 name VARCHAR(255) NOT NULL,
                 slug VARCHAR(255) NOT NULL UNIQUE,
                 price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
-                mrp DECIMAL(10, 2) DEFAULT 0.00,
+                price100g DECIMAL(10, 2) DEFAULT NULL,
+                price200g DECIMAL(10, 2) DEFAULT NULL,
+                mrp DECIMAL(10, 2) DEFAULT NULL,
                 category VARCHAR(150) NOT NULL DEFAULT 'Whole Spices',
                 brand VARCHAR(150) NOT NULL DEFAULT 'Viyodha',
                 type VARCHAR(150) NOT NULL DEFAULT 'Spices',
@@ -62,6 +64,14 @@ async function initDB() {
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
+
+        // Ensure price100g and price200g exist
+        try {
+            await connection.query("ALTER TABLE products ADD COLUMN price100g DECIMAL(10, 2) DEFAULT NULL");
+        } catch (_) {}
+        try {
+            await connection.query("ALTER TABLE products ADD COLUMN price200g DECIMAL(10, 2) DEFAULT NULL");
+        } catch (_) {}
 
         // 3. Reviews table
         await connection.query(`
@@ -133,14 +143,18 @@ async function initDB() {
             console.log(`Default Viyodha admin created: ${adminEmail} / admin123`);
         }
 
+        // Clean up legacy separate products
+        await connection.query(`DELETE FROM products WHERE slug = 'bay-leaf-200g'`);
+
         // Check products count and ensure all initial products exist
         const initialProducts = [
             {
                 slug: "green-cardamom",
-                name: "Green Cardamom 200g",
+                name: "Green Cardamom",
                 image: "/products/cardamom.png",
-                price: 495.00,
-                mrp: 599.00,
+                price: 260.00,
+                price100g: 260.00,
+                price200g: 495.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Cardamom",
@@ -148,16 +162,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "8mm+" },
                     { label: "Origin", value: "Idukki, Kerala" },
-                    { label: "Net weight", value: "200 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole pods" }
                 ]
             },
             {
                 slug: "black-pepper",
-                name: "Black Pepper 100g",
+                name: "Black Pepper",
                 image: "/products/black_pepper.png",
                 price: 349.00,
-                mrp: 429.00,
+                price100g: 349.00,
+                price200g: 660.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Pepper",
@@ -165,16 +180,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Bold" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "100 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole" }
                 ]
             },
             {
                 slug: "nutmeg",
-                name: "Nutmeg (Whole) 100 g",
+                name: "Nutmeg (Whole)",
                 image: "/products/nutmeg.png",
                 price: 599.00,
-                mrp: 749.00,
+                price100g: 599.00,
+                price200g: 1140.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Nutmeg",
@@ -182,16 +198,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Whole" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "100 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole" }
                 ]
             },
             {
                 slug: "bay-leaf",
-                name: "Bay Leaf 100g",
+                name: "Bay Leaf",
                 image: "/products/bay_leaf.png",
                 price: 129.00,
-                mrp: 159.00,
+                price100g: 129.00,
+                price200g: 239.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Bay Leaf",
@@ -199,33 +216,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Hand-picked" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "100 g" },
-                    { label: "Form", value: "Whole leaves" }
-                ]
-            },
-            {
-                slug: "bay-leaf-200g",
-                name: "Bay Leaf 200g",
-                image: "/products/bay_leaf.png",
-                price: 239.00,
-                mrp: 259.00,
-                category: "Whole Spices",
-                brand: "Viyodha",
-                type: "Bay Leaf",
-                description: "Whole leaves, dried gently to keep their colour and aroma. Add to rice, dals, stews and stocks.",
-                details: [
-                    { label: "Grade", value: "Hand-picked" },
-                    { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "200 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole leaves" }
                 ]
             },
             {
                 slug: "cinnamon",
-                name: "Cinnamon (Cassia) 100g",
+                name: "Cinnamon (Cassia)",
                 image: "/products/cinnamon.png",
                 price: 249.00,
-                mrp: 299.00,
+                price100g: 249.00,
+                price200g: 470.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Cinnamon",
@@ -233,16 +234,17 @@ async function initDB() {
                 details: [
                     { label: "Type", value: "Cassia" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "100 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Sticks" }
                 ]
             },
             {
                 slug: "star-anise",
-                name: "Star Anise 200g",
+                name: "Star Anise",
                 image: "/products/star_anise.jpeg",
-                price: 299.00,
-                mrp: 349.00,
+                price: 160.00,
+                price100g: 160.00,
+                price200g: 299.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Star Anise",
@@ -250,16 +252,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Whole stars" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "200 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole" }
                 ]
             },
             {
                 slug: "mace",
-                name: "Mace 100g",
+                name: "Mace",
                 image: "/products/mace.png",
                 price: 449.00,
-                mrp: 529.00,
+                price100g: 449.00,
+                price200g: 850.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Mace",
@@ -267,16 +270,17 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Whole blades" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "100 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole" }
                 ]
             },
             {
                 slug: "cloves",
-                name: "Cloves(Laung) 200g",
+                name: "Cloves (Laung)",
                 image: "/products/cloves.png",
-                price: 279.00,
-                mrp: 329.00,
+                price: 150.00,
+                price100g: 150.00,
+                price200g: 279.00,
                 category: "Whole Spices",
                 brand: "Viyodha",
                 type: "Cloves",
@@ -284,7 +288,7 @@ async function initDB() {
                 details: [
                     { label: "Grade", value: "Hand-picked" },
                     { label: "Origin", value: "Kerala" },
-                    { label: "Net weight", value: "200 g" },
+                    { label: "Available sizes", value: "100 g, 200 g" },
                     { label: "Form", value: "Whole" }
                 ]
             }
@@ -294,13 +298,14 @@ async function initDB() {
             const [exists] = await connection.query(`SELECT id FROM products WHERE slug = ? LIMIT 1`, [p.slug]);
             if (exists.length === 0) {
                 await connection.query(
-                    `INSERT INTO products (name, slug, price, mrp, category, brand, type, description, image, details_json) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, details_json) 
+                     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
                     [
                         p.name,
                         p.slug,
                         p.price,
-                        p.mrp,
+                        p.price100g,
+                        p.price200g,
                         p.category,
                         p.brand,
                         p.type,
@@ -308,6 +313,11 @@ async function initDB() {
                         p.image,
                         JSON.stringify(p.details)
                     ]
+                );
+            } else {
+                await connection.query(
+                    `UPDATE products SET name = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL WHERE slug = ?`,
+                    [p.name, p.price, p.price100g, p.price200g, p.slug]
                 );
             }
         }

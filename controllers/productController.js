@@ -15,16 +15,16 @@ function slugify(text) {
 // Add product (Admin)
 exports.addProductController = async (req, res) => {
     try {
-        const { name, slug, price, mrp, category, brand, type, description, details, details_json, stock } = req.body;
+        const { name, slug, price, price100g, price200g, category, brand, type, description, details, details_json, stock } = req.body;
 
         const uploadimage = req.file
             ? `/uploads/${req.file.filename}`
             : req.body.image;
 
-        if (!name || !price || !description || !uploadimage) {
+        if (!name || (!price && !price100g) || !description || !uploadimage) {
             return res.status(400).json({
                 success: false,
-                message: "Product name, price, description, and image are required.",
+                message: "Product name, prices (100g / 200g), description, and image are required.",
             });
         }
 
@@ -37,8 +37,8 @@ exports.addProductController = async (req, res) => {
             finalSlug = `${finalSlug}-${Date.now().toString().slice(-4)}`;
         }
 
-        const productPrice = parseFloat(price) || 0.00;
-        const productMrp = mrp ? parseFloat(mrp) : productPrice;
+        const p100 = price100g !== undefined && price100g !== "" ? parseFloat(price100g) : (parseFloat(price) || 0.00);
+        const p200 = price200g !== undefined && price200g !== "" ? parseFloat(price200g) : Math.round(p100 * 1.9);
         const productCategory = category ? category.trim() : "Whole Spices";
         const productBrand = brand ? brand.trim() : "Viyodha";
         const productType = type ? type.trim() : "Spices";
@@ -52,19 +52,21 @@ exports.addProductController = async (req, res) => {
         } else {
             parsedDetails = JSON.stringify([
                 { label: "Origin", value: "Kerala" },
+                { label: "Available sizes", value: "100 g, 200 g" },
                 { label: "Grade", value: "Premium" },
                 { label: "Form", value: "Whole" }
             ]);
         }
 
         const [result] = await pool.query(
-            `INSERT INTO products (name, slug, price, mrp, category, brand, type, description, image, details_json, stock) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, details_json, stock) 
+             VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 name.trim(),
                 finalSlug,
-                productPrice,
-                productMrp,
+                p100,
+                p100,
+                p200,
                 productCategory,
                 productBrand,
                 productType,
@@ -135,8 +137,14 @@ exports.getAllProductsController = async (req, res) => {
                     details = [];
                 }
             }
+            const p100 = p.price100g ? Number(p.price100g) : Number(p.price);
+            const p200 = p.price200g ? Number(p.price200g) : Math.round(p100 * 1.9);
             return {
                 ...p,
+                price: p100,
+                price100g: p100,
+                price200g: p200,
+                mrp: null,
                 details
             };
         });
@@ -187,8 +195,15 @@ exports.viewProductController = async (req, res) => {
             }
         }
 
+        const p100 = product.price100g ? Number(product.price100g) : Number(product.price);
+        const p200 = product.price200g ? Number(product.price200g) : Math.round(p100 * 1.9);
+
         return res.status(200).json({
             ...product,
+            price: p100,
+            price100g: p100,
+            price200g: p200,
+            mrp: null,
             details,
             reviews,
             avgRating: Number(avgRating),
@@ -223,9 +238,14 @@ exports.updateProductController = async (req, res) => {
         const brand = req.body.brand !== undefined ? req.body.brand.trim() : current.brand;
         const type = req.body.type !== undefined ? req.body.type.trim() : current.type;
         const description = req.body.description !== undefined ? req.body.description.trim() : current.description;
-        const price = req.body.price !== undefined ? parseFloat(req.body.price) : current.price;
-        const mrp = req.body.mrp !== undefined ? parseFloat(req.body.mrp) : current.mrp;
         const stock = req.body.stock !== undefined ? parseInt(req.body.stock, 10) : current.stock;
+
+        const p100 = req.body.price100g !== undefined && req.body.price100g !== ""
+            ? parseFloat(req.body.price100g)
+            : (req.body.price !== undefined ? parseFloat(req.body.price) : (current.price100g || current.price));
+        const p200 = req.body.price200g !== undefined && req.body.price200g !== ""
+            ? parseFloat(req.body.price200g)
+            : (current.price200g || Math.round(Number(p100) * 1.9));
 
         let details_json = current.details_json;
         if (req.body.details_json !== undefined) {
@@ -244,9 +264,9 @@ exports.updateProductController = async (req, res) => {
         }
 
         await pool.query(
-            `UPDATE products SET name = ?, slug = ?, category = ?, brand = ?, type = ?, description = ?, price = ?, mrp = ?, image = ?, details_json = ?, stock = ? 
+            `UPDATE products SET name = ?, slug = ?, category = ?, brand = ?, type = ?, description = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL, image = ?, details_json = ?, stock = ? 
              WHERE id = ?`,
-            [name, slug, category, brand, type, description, price, mrp, image, details_json, stock, current.id]
+            [name, slug, category, brand, type, description, p100, p100, p200, image, details_json, stock, current.id]
         );
 
         const [updatedRows] = await pool.query("SELECT * FROM products WHERE id = ?", [current.id]);
