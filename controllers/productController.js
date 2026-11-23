@@ -4,13 +4,15 @@ const fs = require("fs/promises");
 const path = require("path");
 
 function slugify(text) {
-    return text
+    const cleaned = text
         .toString()
         .toLowerCase()
         .trim()
         .replace(/\s+/g, '-')
         .replace(/[^\w\-]+/g, '')
-        .replace(/\-\-+/g, '-');
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return cleaned || `spice-${Date.now().toString().slice(-4)}`;
 }
 
 function formatProduct(p) {
