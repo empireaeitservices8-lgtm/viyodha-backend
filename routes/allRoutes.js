@@ -32,8 +32,8 @@ router.post('/contact', contactController.sendContactEmail);
 
 // ======================== Admin Routes ========================
 // Product management
-router.post('/product/add', adminMiddleware, multerMiddleware.single('image'), productController.addProductController);
-router.put('/product/:id', adminMiddleware, multerMiddleware.single('image'), productController.updateProductController);
+router.post('/product/add', adminMiddleware, multerMiddleware.any(), productController.addProductController);
+router.put('/product/:id', adminMiddleware, multerMiddleware.any(), productController.updateProductController);
 router.delete('/product/:id', adminMiddleware, productController.deleteProductController);
 
 // User management

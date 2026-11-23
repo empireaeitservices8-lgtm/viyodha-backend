@@ -65,12 +65,15 @@ async function initDB() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
 
-        // Ensure price100g and price200g exist
+        // Ensure price100g, price200g, and images_json exist
         try {
             await connection.query("ALTER TABLE products ADD COLUMN price100g DECIMAL(10, 2) DEFAULT NULL");
         } catch (_) {}
         try {
             await connection.query("ALTER TABLE products ADD COLUMN price200g DECIMAL(10, 2) DEFAULT NULL");
+        } catch (_) {}
+        try {
+            await connection.query("ALTER TABLE products ADD COLUMN images_json JSON DEFAULT NULL");
         } catch (_) {}
 
         // 3. Reviews table
@@ -152,6 +155,7 @@ async function initDB() {
                 slug: "green-cardamom",
                 name: "Green Cardamom (ഏലക്ക)",
                 image: "/products/cardamom.png",
+                images: ["/products/cardamom.png", "/products/cardamom2.png"],
                 price: 499.00,
                 price100g: 499.00,
                 price200g: 899.00,
@@ -171,6 +175,7 @@ async function initDB() {
                 slug: "black-pepper",
                 name: "Black Pepper (കുരുമുളക്)",
                 image: "/products/black_pepper.png",
+                images: ["/products/black_pepper.png", "/products/black_pepper2.png"],
                 price: 99.00,
                 price100g: 99.00,
                 price200g: 189.00,
@@ -190,6 +195,7 @@ async function initDB() {
                 slug: "nutmeg",
                 name: "Nutmeg (ജാതിക്ക)",
                 image: "/products/nutmeg.png",
+                images: ["/products/nutmeg.png", "/products/nutmeg2.png"],
                 price: 299.00,
                 price100g: 299.00,
                 price200g: 589.00,
@@ -209,6 +215,7 @@ async function initDB() {
                 slug: "bay-leaf",
                 name: "Bay Leaf (വഴനയില)",
                 image: "/products/bay_leaf.png",
+                images: ["/products/bay_leaf.png", "/products/bay_leaf2.png"],
                 price: 49.00,
                 price100g: 49.00,
                 price200g: 189.00,
@@ -228,6 +235,7 @@ async function initDB() {
                 slug: "cinnamon",
                 name: "Cinnamon (കറുവപ്പട്ട)",
                 image: "/products/cinnamon.png",
+                images: ["/products/cinnamon.png", "/products/cinnamon2.png"],
                 price: 59.00,
                 price100g: 59.00,
                 price200g: 119.00,
@@ -247,6 +255,7 @@ async function initDB() {
                 slug: "cassia-cinnamon",
                 name: "Cassia Cinnamon (ചുരുൾ പട്ട)",
                 image: "/products/cassia_cinnamon.png",
+                images: ["/products/cassia_cinnamon.png", "/products/cinnamon2.png"],
                 price: 99.00,
                 price100g: 99.00,
                 price200g: 189.00,
@@ -266,6 +275,7 @@ async function initDB() {
                 slug: "star-anise",
                 name: "Star Anise (തക്കോലം)",
                 image: "/products/star_anise.jpeg",
+                images: ["/products/star_anise.jpeg", "/products/star_anise2.png"],
                 price: 99.00,
                 price100g: 99.00,
                 price200g: 189.00,
@@ -285,6 +295,7 @@ async function initDB() {
                 slug: "mace",
                 name: "Mace (ജാതിപത്രി)",
                 image: "/products/mace.png",
+                images: ["/products/mace.png", "/products/mace2.png"],
                 price: 299.00,
                 price100g: 299.00,
                 price200g: 589.00,
@@ -304,6 +315,7 @@ async function initDB() {
                 slug: "cloves",
                 name: "Cloves (ഗ്രാമ്പൂ)",
                 image: "/products/cloves.png",
+                images: ["/products/cloves.png", "/products/cloves2.png"],
                 price: 149.00,
                 price100g: 149.00,
                 price200g: 289.00,
@@ -323,10 +335,11 @@ async function initDB() {
 
         for (const p of initialProducts) {
             const [exists] = await connection.query(`SELECT id FROM products WHERE slug = ? LIMIT 1`, [p.slug]);
+            const pImages = p.images || [p.image];
             if (exists.length === 0) {
                 await connection.query(
-                    `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, details_json) 
-                     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, images_json, details_json) 
+                     VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
                     [
                         p.name,
                         p.slug,
@@ -338,13 +351,14 @@ async function initDB() {
                         p.type,
                         p.description,
                         p.image,
+                        JSON.stringify(pImages),
                         JSON.stringify(p.details)
                     ]
                 );
             } else {
                 await connection.query(
-                    `UPDATE products SET name = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL, category = ?, brand = ?, type = ?, description = ?, image = ?, details_json = ? WHERE slug = ?`,
-                    [p.name, p.price, p.price100g, p.price200g, p.category, p.brand, p.type, p.description, p.image, JSON.stringify(p.details), p.slug]
+                    `UPDATE products SET name = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL, category = ?, brand = ?, type = ?, description = ?, image = ?, images_json = ?, details_json = ? WHERE slug = ?`,
+                    [p.name, p.price, p.price100g, p.price200g, p.category, p.brand, p.type, p.description, p.image, JSON.stringify(pImages), JSON.stringify(p.details), p.slug]
                 );
             }
         }

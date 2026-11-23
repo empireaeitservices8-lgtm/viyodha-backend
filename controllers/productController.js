@@ -13,33 +13,83 @@ function slugify(text) {
         .replace(/\-\-+/g, '-');
 }
 
+function formatProduct(p) {
+    let details = [];
+    if (p.details_json) {
+        try {
+            details = typeof p.details_json === "string" ? JSON.parse(p.details_json) : p.details_json;
+        } catch {
+            details = [];
+        }
+    }
+
+    let images = [];
+    if (p.images_json) {
+        try {
+            images = typeof p.images_json === "string" ? JSON.parse(p.images_json) : p.images_json;
+        } catch {
+            images = [];
+        }
+    }
+    if (!images || images.length === 0) {
+        images = p.image ? [p.image] : [];
+    }
+
+    const p100 = p.price100g ? Number(p.price100g) : Number(p.price);
+    const p200 = p.price200g ? Number(p.price200g) : Math.round(p100 * 1.9);
+
+    return {
+        ...p,
+        price: p100,
+        price100g: p100,
+        price200g: p200,
+        mrp: null,
+        image: images[0] || p.image,
+        image2: images.length > 1 ? images[1] : null,
+        images,
+        details
+    };
+}
+
 // Add product (Admin)
 exports.addProductController = async (req, res) => {
     try {
         const { name, slug, price, price100g, price200g, category, brand, type, description, details, details_json, stock } = req.body;
 
-        let uploadimage = req.body.image || "";
-        if (req.file) {
+        const files = req.files || (req.file ? [req.file] : []);
+        const uploadedImages = [];
+
+        for (const file of files) {
             try {
-                const cloudRes = await cloudinary.uploader.upload(req.file.path, {
+                const cloudRes = await cloudinary.uploader.upload(file.path, {
                     folder: "viyodha/products",
                     use_filename: true,
                     unique_filename: true
                 });
-                uploadimage = cloudRes.secure_url;
-                await fs.unlink(req.file.path).catch(() => {});
+                uploadedImages.push(cloudRes.secure_url);
+                await fs.unlink(file.path).catch(() => {});
             } catch (cloudErr) {
                 console.warn("Cloudinary upload failed, using local file:", cloudErr);
-                uploadimage = `/uploads/${req.file.filename}`;
+                uploadedImages.push(`/uploads/${file.filename}`);
             }
         }
 
-        if (!name || (!price && !price100g) || !description || !uploadimage) {
+        if (uploadedImages.length === 0) {
             return res.status(400).json({
                 success: false,
-                message: "Product name, prices (100g / 200g), description, and image are required.",
+                message: "Please upload at least one product image.",
             });
         }
+
+        if (!name || (!price && !price100g) || !description) {
+            return res.status(400).json({
+                success: false,
+                message: "Product name, prices (100g / 200g), and description are required.",
+            });
+        }
+
+        const primaryImage = uploadedImages[0];
+        const imagesJson = JSON.stringify(uploadedImages);
 
         // Generate or clean slug
         let finalSlug = slug ? slugify(slug) : slugify(name);
@@ -72,8 +122,8 @@ exports.addProductController = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, details_json, stock) 
-             VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT INTO products (name, slug, price, price100g, price200g, mrp, category, brand, type, description, image, images_json, details_json, stock) 
+             VALUES (?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 name.trim(),
                 finalSlug,
@@ -84,7 +134,8 @@ exports.addProductController = async (req, res) => {
                 productBrand,
                 productType,
                 description.trim(),
-                uploadimage,
+                primaryImage,
+                imagesJson,
                 parsedDetails,
                 productStock
             ]
@@ -95,7 +146,7 @@ exports.addProductController = async (req, res) => {
         return res.status(201).json({
             success: true,
             message: "Product added successfully.",
-            product: newProduct[0]
+            product: formatProduct(newProduct[0])
         });
     } catch (error) {
         console.error("Add product error:", error);
@@ -139,28 +190,7 @@ exports.getAllProductsController = async (req, res) => {
         }
 
         const [products] = await pool.query(query, params);
-
-        // Normalize details_json for each product
-        const formatted = products.map((p) => {
-            let details = [];
-            if (p.details_json) {
-                try {
-                    details = typeof p.details_json === "string" ? JSON.parse(p.details_json) : p.details_json;
-                } catch {
-                    details = [];
-                }
-            }
-            const p100 = p.price100g ? Number(p.price100g) : Number(p.price);
-            const p200 = p.price200g ? Number(p.price200g) : Math.round(p100 * 1.9);
-            return {
-                ...p,
-                price: p100,
-                price100g: p100,
-                price200g: p200,
-                mrp: null,
-                details
-            };
-        });
+        const formatted = products.map(formatProduct);
 
         return res.status(200).json(formatted);
     } catch (error) {
@@ -199,25 +229,10 @@ exports.viewProductController = async (req, res) => {
             ? (reviews.reduce((acc, r) => acc + Number(r.rating), 0) / reviews.length).toFixed(1)
             : 0;
 
-        let details = [];
-        if (product.details_json) {
-            try {
-                details = typeof product.details_json === "string" ? JSON.parse(product.details_json) : product.details_json;
-            } catch {
-                details = [];
-            }
-        }
-
-        const p100 = product.price100g ? Number(product.price100g) : Number(product.price);
-        const p200 = product.price200g ? Number(product.price200g) : Math.round(p100 * 1.9);
+        const formatted = formatProduct(product);
 
         return res.status(200).json({
-            ...product,
-            price: p100,
-            price100g: p100,
-            price200g: p200,
-            mrp: null,
-            details,
+            ...formatted,
             reviews,
             avgRating: Number(avgRating),
             reviewCount: reviews.length,
@@ -269,28 +284,63 @@ exports.updateProductController = async (req, res) => {
             details_json = JSON.stringify(details_json);
         }
 
-        let image = current.image;
-        if (req.file) {
+        // Process images
+        const files = req.files || (req.file ? [req.file] : []);
+        const newUploadedUrls = [];
+
+        for (const file of files) {
             try {
-                const cloudRes = await cloudinary.uploader.upload(req.file.path, {
+                const cloudRes = await cloudinary.uploader.upload(file.path, {
                     folder: "viyodha/products",
                     use_filename: true,
                     unique_filename: true
                 });
-                image = cloudRes.secure_url;
-                await fs.unlink(req.file.path).catch(() => {});
+                newUploadedUrls.push(cloudRes.secure_url);
+                await fs.unlink(file.path).catch(() => {});
             } catch (cloudErr) {
                 console.warn("Cloudinary upload failed, using local file:", cloudErr);
-                image = `/uploads/${req.file.filename}`;
+                newUploadedUrls.push(`/uploads/${file.filename}`);
             }
-        } else if (req.body.image) {
-            image = req.body.image;
         }
 
+        // Kept existing images
+        let keptImages = [];
+        if (req.body.existingImages !== undefined) {
+            try {
+                keptImages = typeof req.body.existingImages === "string"
+                    ? JSON.parse(req.body.existingImages)
+                    : req.body.existingImages;
+                if (!Array.isArray(keptImages)) keptImages = [keptImages];
+            } catch {
+                keptImages = [];
+            }
+        } else if (files.length === 0) {
+            if (current.images_json) {
+                try {
+                    keptImages = typeof current.images_json === "string" ? JSON.parse(current.images_json) : current.images_json;
+                } catch {
+                    keptImages = [current.image];
+                }
+            } else {
+                keptImages = [current.image];
+            }
+        }
+
+        const finalImages = [...keptImages, ...newUploadedUrls].filter(Boolean);
+        if (finalImages.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Product must have at least one image.",
+            });
+        }
+
+        const primaryImage = finalImages[0];
+        const imagesJson = JSON.stringify(finalImages);
+
         await pool.query(
-            `UPDATE products SET name = ?, slug = ?, category = ?, brand = ?, type = ?, description = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL, image = ?, details_json = ?, stock = ? 
+            `UPDATE products SET name = ?, slug = ?, category = ?, brand = ?, type = ?, description = ?, price = ?, price100g = ?, price200g = ?, mrp = NULL, image = ?, images_json = ?, details_json = ?, stock = ? 
              WHERE id = ?`,
-            [name, slug, category, brand, type, description, p100, p100, p200, image, details_json, stock, current.id]
+            [name, slug, category, brand, type, description, p100, p100, p200, primaryImage, imagesJson, details_json, stock, current.id]
         );
 
         const [updatedRows] = await pool.query("SELECT * FROM products WHERE id = ?", [current.id]);
@@ -298,7 +348,7 @@ exports.updateProductController = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Product updated successfully.",
-            product: updatedRows[0],
+            product: formatProduct(updatedRows[0]),
         });
     } catch (error) {
         console.error("Update product error:", error);
