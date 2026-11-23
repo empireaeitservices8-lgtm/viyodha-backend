@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const cloudinary = require("../config/cloudinary");
 const fs = require("fs/promises");
 const path = require("path");
 
@@ -17,9 +18,21 @@ exports.addProductController = async (req, res) => {
     try {
         const { name, slug, price, price100g, price200g, category, brand, type, description, details, details_json, stock } = req.body;
 
-        const uploadimage = req.file
-            ? `/uploads/${req.file.filename}`
-            : req.body.image;
+        let uploadimage = req.body.image || "";
+        if (req.file) {
+            try {
+                const cloudRes = await cloudinary.uploader.upload(req.file.path, {
+                    folder: "viyodha/products",
+                    use_filename: true,
+                    unique_filename: true
+                });
+                uploadimage = cloudRes.secure_url;
+                await fs.unlink(req.file.path).catch(() => {});
+            } catch (cloudErr) {
+                console.warn("Cloudinary upload failed, using local file:", cloudErr);
+                uploadimage = `/uploads/${req.file.filename}`;
+            }
+        }
 
         if (!name || (!price && !price100g) || !description || !uploadimage) {
             return res.status(400).json({
@@ -258,7 +271,18 @@ exports.updateProductController = async (req, res) => {
 
         let image = current.image;
         if (req.file) {
-            image = `/uploads/${req.file.filename}`;
+            try {
+                const cloudRes = await cloudinary.uploader.upload(req.file.path, {
+                    folder: "viyodha/products",
+                    use_filename: true,
+                    unique_filename: true
+                });
+                image = cloudRes.secure_url;
+                await fs.unlink(req.file.path).catch(() => {});
+            } catch (cloudErr) {
+                console.warn("Cloudinary upload failed, using local file:", cloudErr);
+                image = `/uploads/${req.file.filename}`;
+            }
         } else if (req.body.image) {
             image = req.body.image;
         }
