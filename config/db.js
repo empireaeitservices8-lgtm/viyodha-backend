@@ -150,7 +150,7 @@ async function initDB() {
         const initialProducts = [
             {
                 slug: "green-cardamom",
-                name: "Green Cardamom",
+                name: "Green Cardamom (ഏലക്ക)",
                 image: "/products/cardamom.png",
                 price: 260.00,
                 price100g: 260.00,
@@ -160,6 +160,7 @@ async function initDB() {
                 type: "Cardamom",
                 description: "Plump, aromatic pods graded by size and sealed fresh. Use whole in tea, biryani and desserts, or crush the seeds just before cooking.",
                 details: [
+                    { label: "Malayalam name", value: "ഏലക്ക (Elakka)" },
                     { label: "Grade", value: "8mm+" },
                     { label: "Origin", value: "Idukki, Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -168,7 +169,7 @@ async function initDB() {
             },
             {
                 slug: "black-pepper",
-                name: "Black Pepper",
+                name: "Black Pepper (കുരുമുളക്)",
                 image: "/products/black_pepper.png",
                 price: 349.00,
                 price100g: 349.00,
@@ -178,6 +179,7 @@ async function initDB() {
                 type: "Pepper",
                 description: "Bold, sharp peppercorns with a strong aroma. Grind fresh over any dish for a warmth that pre-ground pepper cannot match.",
                 details: [
+                    { label: "Malayalam name", value: "കുരുമുളക് (Kurumulaku)" },
                     { label: "Grade", value: "Bold" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -186,7 +188,7 @@ async function initDB() {
             },
             {
                 slug: "nutmeg",
-                name: "Nutmeg (Whole)",
+                name: "Nutmeg (ജാതിക്ക)",
                 image: "/products/nutmeg.png",
                 price: 599.00,
                 price100g: 599.00,
@@ -196,6 +198,7 @@ async function initDB() {
                 type: "Nutmeg",
                 description: "Whole nutmeg, slow-dried so it keeps its oils. Grate a little into sauces, milk drinks, baking and curries.",
                 details: [
+                    { label: "Malayalam name", value: "ജാതിക്ക (Jathikka)" },
                     { label: "Grade", value: "Whole" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -204,7 +207,7 @@ async function initDB() {
             },
             {
                 slug: "bay-leaf",
-                name: "Bay Leaf",
+                name: "Bay Leaf (വഴനയില)",
                 image: "/products/bay_leaf.png",
                 price: 129.00,
                 price100g: 129.00,
@@ -214,6 +217,7 @@ async function initDB() {
                 type: "Bay Leaf",
                 description: "Whole leaves, dried gently to keep their colour and aroma. Add to rice, dals, stews and stocks.",
                 details: [
+                    { label: "Malayalam name", value: "വഴനയില (Vazhanayila)" },
                     { label: "Grade", value: "Hand-picked" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -222,7 +226,7 @@ async function initDB() {
             },
             {
                 slug: "cinnamon",
-                name: "Cinnamon (Cassia)",
+                name: "Cinnamon (കറുവപ്പട്ട)",
                 image: "/products/cinnamon.png",
                 price: 249.00,
                 price100g: 249.00,
@@ -232,6 +236,7 @@ async function initDB() {
                 type: "Cinnamon",
                 description: "Cassia cinnamon with a bold, warm flavour and a sweet finish. Simmer the sticks in tea, curries, biryani and desserts.",
                 details: [
+                    { label: "Malayalam name", value: "കറുവപ്പട്ട (Karuvapatta)" },
                     { label: "Type", value: "Cassia" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -240,7 +245,7 @@ async function initDB() {
             },
             {
                 slug: "star-anise",
-                name: "Star Anise",
+                name: "Star Anise (തക്കോലം)",
                 image: "/products/star_anise.jpeg",
                 price: 160.00,
                 price100g: 160.00,
@@ -250,6 +255,7 @@ async function initDB() {
                 type: "Star Anise",
                 description: "Whole, star-shaped pods with a sweet, licorice-like aroma. Add to biryani, masala chai, stocks and slow-cooked curries.",
                 details: [
+                    { label: "Malayalam name", value: "തക്കോലം (Thakkolam)" },
                     { label: "Grade", value: "Whole stars" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -258,7 +264,7 @@ async function initDB() {
             },
             {
                 slug: "mace",
-                name: "Mace",
+                name: "Mace (ജാതിപത്രി)",
                 image: "/products/mace.png",
                 price: 449.00,
                 price100g: 449.00,
@@ -268,6 +274,7 @@ async function initDB() {
                 type: "Mace",
                 description: "Delicate blades of mace with a warm, floral flavour milder than nutmeg. Use in rich gravies, biryani, baking and spice blends.",
                 details: [
+                    { label: "Malayalam name", value: "ജാതിപത്രി (Jathipathri)" },
                     { label: "Grade", value: "Whole blades" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
@@ -276,7 +283,7 @@ async function initDB() {
             },
             {
                 slug: "cloves",
-                name: "Cloves (Laung)",
+                name: "Cloves (ഗ്രാമ്പൂ)",
                 image: "/products/cloves.png",
                 price: 150.00,
                 price100g: 150.00,
@@ -286,6 +293,7 @@ async function initDB() {
                 type: "Cloves",
                 description: "Plump, intensely aromatic cloves with a strong, warming flavour. Use in rice dishes, curries, teas and pickles, a few at a time.",
                 details: [
+                    { label: "Malayalam name", value: "ഗ്രാമ്പൂ (Gramboo)" },
                     { label: "Grade", value: "Hand-picked" },
                     { label: "Origin", value: "Kerala" },
                     { label: "Available sizes", value: "100 g, 200 g" },
