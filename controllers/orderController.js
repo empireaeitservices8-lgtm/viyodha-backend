@@ -41,7 +41,26 @@ exports.addOrderController = async (req, res) => {
         }
 
         const parsedSubtotal = subtotal ? parseFloat(subtotal) : calculatedSubtotal;
-        const parsedShipping = shippingFee !== undefined ? parseFloat(shippingFee) : (parsedSubtotal >= 999 ? 0 : 60);
+
+        let parsedShipping;
+        if (shippingFee !== undefined && shippingFee !== null) {
+            parsedShipping = parseFloat(shippingFee);
+        } else {
+            let defKerala = 40, defNational = 70, defThreshold = 999;
+            try {
+                const [ds] = await pool.query("SELECT * FROM delivery_settings WHERE id = 1 LIMIT 1");
+                if (ds.length > 0) {
+                    defKerala = parseFloat(ds[0].delivery_kerala);
+                    defNational = parseFloat(ds[0].delivery_national);
+                    defThreshold = parseFloat(ds[0].free_shipping_threshold);
+                }
+            } catch (e) {
+                console.warn("Could not query delivery_settings fallback:", e);
+            }
+            const isKerala = String(state || "").trim().toLowerCase() === "kerala";
+            parsedShipping = (defThreshold > 0 && parsedSubtotal >= defThreshold) ? 0 : (isKerala ? defKerala : defNational);
+        }
+
         const finalTotal = totalAmount ? parseFloat(totalAmount) : (parsedSubtotal + parsedShipping);
 
         const method = paymentMethod || "Cash on Delivery";

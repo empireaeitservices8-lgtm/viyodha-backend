@@ -128,6 +128,26 @@ async function initDB() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         `);
 
+        // 6. Delivery Settings table
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS delivery_settings (
+                id INT PRIMARY KEY DEFAULT 1,
+                delivery_kerala DECIMAL(10, 2) NOT NULL DEFAULT 40.00,
+                delivery_national DECIMAL(10, 2) NOT NULL DEFAULT 70.00,
+                free_shipping_threshold DECIMAL(10, 2) NOT NULL DEFAULT 999.00,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+
+        // Seed delivery settings default (Kerala: 40, Outside Kerala: 70)
+        await connection.query(`
+            INSERT INTO delivery_settings (id, delivery_kerala, delivery_national, free_shipping_threshold)
+            VALUES (1, 40.00, 70.00, 999.00)
+            ON DUPLICATE KEY UPDATE 
+                delivery_kerala = IF(delivery_kerala = 0.00 OR delivery_kerala = 60.00, 40.00, delivery_kerala),
+                delivery_national = IF(delivery_national = 0.00 OR delivery_national = 60.00, 70.00, delivery_national);
+        `);
+
         // Seed default admin if not exists
         const adminEmail = process.env.ADMIN_EMAIL || 'viyodhatradingpvtlimited@gmail.com';
 

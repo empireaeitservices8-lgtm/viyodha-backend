@@ -6,6 +6,7 @@ const cartController = require('../controllers/cartController');
 const orderController = require('../controllers/orderController');
 const reviewController = require('../controllers/reviewController');
 const contactController = require('../controllers/contactController');
+const settingsController = require('../controllers/settingsController');
 const adminMiddleware = require('../middlewares/adminMiddleware');
 const jwtMiddleware = require('../middlewares/jwtMiddleware');
 const multerMiddleware = require('../middlewares/multerMiddleware');
@@ -24,6 +25,9 @@ router.get('/product/:id', productController.viewProductController);
 
 // Reviews (Public read)
 router.get('/reviews/:productId', reviewController.getProductReviewsController);
+
+// Delivery Settings (Public read)
+router.get('/settings/delivery', settingsController.getDeliverySettingsController);
 
 // Contact / Enquiries
 router.post('/send', contactController.sendContactEmail);
@@ -48,6 +52,10 @@ router.delete('/order/:id', adminMiddleware, orderController.deleteOrderControll
 
 // Review moderation
 router.delete('/admin/review/:id', adminMiddleware, reviewController.deleteReviewController);
+
+// Delivery Settings (Admin update)
+router.put('/admin/settings/delivery', adminMiddleware, settingsController.updateDeliverySettingsController);
+router.put('/settings/delivery', adminMiddleware, settingsController.updateDeliverySettingsController);
 
 
 // ======================== Authenticated User Routes ========================
